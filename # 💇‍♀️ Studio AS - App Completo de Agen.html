@@ -1,0 +1,335 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studio AS - Agendamentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .gradient-rose { background: linear-gradient(135deg, #1a0010 0%, #3d0030 40%, #1a0010 100%); }
+    .text-gold { color: #d4af37; }
+    .glow-gold { box-shadow: 0 0 20px rgba(212,175,55,0.3); }
+    .card-hover { transition: all 0.25s ease; }
+    .card-hover:hover { transform: translateY(-3px); }
+  </style>
+</head>
+<body class="bg-gray-950 text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useMemo, useState, useEffect } = React;
+
+    const SERVICES = [
+      { id: 1, name: "Selagem", emoji: "✨", priceLabel: "A partir de R$ 150,00", duration: "2h ~ 3h" },
+      { id: 2, name: "Mechas", emoji: "🎨", priceLabel: "A partir de R$ 150,00", duration: "2h ~ 4h" },
+      { id: 3, name: "Corte", emoji: "✂️", priceLabel: "R$ 30,00", duration: "30min ~ 1h" },
+      { id: 4, name: "Escova", emoji: "💨", priceLabel: "A partir de R$ 150,00", duration: "1h ~ 2h" },
+      { id: 5, name: "Coloração", emoji: "🌈", priceLabel: "A partir de R$ 50,00", duration: "1h30 ~ 3h" },
+      { id: 6, name: "Sobrancelha", emoji: "🪄", priceLabel: "R$ 20,00", duration: "20min ~ 30min" },
+    ];
+
+    const HORARIOS = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+    const STUDIO_WHATSAPP = "5583996503562";
+
+    function addDias(date, n) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+
+    function toKey(date) {
+      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    }
+
+    function formatarData(date) {
+      return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    }
+
+    const hoje = new Date();
+
+    const OCUPADOS_MOCK = {
+      [toKey(hoje)]: ["09:00", "13:00", "16:00"],
+      [toKey(addDias(hoje, 1))]: ["08:00", "10:00", "15:00"],
+      [toKey(addDias(hoje, 2))]: ["11:00", "14:00"],
+    };
+
+    function Header({ page, setPage }) {
+      const links = [
+        { id: "home", label: "Início" },
+        { id: "agendar", label: "Agendar" },
+        { id: "admin", label: "Painel" },
+      ];
+
+      return (
+        <header className="sticky top-0 z-50 border-b border-yellow-900/40" style={{ background: "rgba(10,0,5,0.95)", backdropFilter: "blur(10px)" }}>
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <button onClick={() => setPage("home")} className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl border border-yellow-700">💇‍♀️</div>
+              <div className="text-left">
+                <p className="font-playfair text-xl font-bold text-gold">Studio AS</p>
+                <p className="text-xs text-rose-300/70">Salão de Beleza</p>
+              </div>
+            </button>
+            <nav className="flex gap-2">
+              {links.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => setPage(l.id)}
+                  className={`px-3 py-2 rounded-xl text-sm ${page === l.id ? "bg-yellow-600/20 text-gold border border-yellow-600/40" : "text-gray-300 hover:bg-white/5"}`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </header>
+      );
+    }
+
+    function Home({ setPage }) {
+      return (
+        <main>
+          <section className="gradient-rose py-16 px-4 text-center">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-6xl mb-4">💇‍♀️</div>
+              <h1 className="font-playfair text-5xl font-bold mb-3">Beleza que <span className="text-gold">transforma</span></h1>
+              <p className="text-rose-200/80 mb-8">Agende seu horário em poucos cliques.</p>
+              <button onClick={() => setPage("agendar")} className="px-8 py-4 rounded-2xl font-bold text-gray-950 glow-gold" style={{ background: "linear-gradient(135deg,#d4af37,#f59e0b)" }}>
+                Agendar Agora
+              </button>
+            </div>
+          </section>
+
+          <section className="max-w-6xl mx-auto px-4 py-12">
+            <h2 className="font-playfair text-3xl font-bold mb-6">Serviços</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {SERVICES.map((s) => (
+                <div key={s.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 card-hover">
+                  <p className="text-3xl mb-2">{s.emoji}</p>
+                  <h3 className="text-xl font-semibold">{s.name}</h3>
+                  <p className="text-sm text-gray-400">{s.duration}</p>
+                  <p className="text-gold font-bold mt-3">{s.priceLabel}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      );
+    }
+
+    function Agendar({ agendamentos, setAgendamentos, setPage }) {
+      const [servico, setServico] = useState(null);
+      const [data, setData] = useState(hoje);
+      const [hora, setHora] = useState(null);
+      const [form, setForm] = useState({ nome: "", phone: "", obs: "" });
+      const [confirmado, setConfirmado] = useState(null);
+      const [waUrl, setWaUrl] = useState("");
+
+      const dias = Array.from({ length: 7 }, (_, i) => addDias(hoje, i));
+      const ocupados = useMemo(() => {
+        const key = toKey(data);
+        const doDia = agendamentos
+          .filter((a) => a.dataKey === key)
+          .map((a) => a.hora);
+        return [...(OCUPADOS_MOCK[key] || []), ...doDia];
+      }, [data, agendamentos]);
+
+      function confirmar() {
+        if (!servico || !hora || !form.nome.trim() || !form.phone.trim()) {
+          alert("Preencha serviço, data, horário, nome e WhatsApp.");
+          return;
+        }
+
+        const srv = SERVICES.find((s) => s.id === Number(servico));
+        const appt = {
+          id: Date.now(),
+          servico: srv.name,
+          emoji: srv.emoji,
+          preco: srv.priceLabel,
+          data: formatarData(data),
+          dataKey: toKey(data),
+          hora,
+          nome: form.nome.trim(),
+          phone: form.phone.trim(),
+          obs: form.obs.trim(),
+          status: "confirmado",
+        };
+
+        setAgendamentos((prev) => [...prev, appt]);
+        setConfirmado(appt);
+        const txtObs = appt.obs ? `\nObservações: ${appt.obs}` : "";
+        const msg = [
+          "Olá, Studio AS! Acabei de agendar pelo app.",
+          `Serviço: ${appt.servico}`,
+          `Data: ${appt.data}`,
+          `Horário: ${appt.hora}`,
+          `Cliente: ${appt.nome}`,
+          `WhatsApp: ${appt.phone}${txtObs}`,
+        ].join("\n");
+        setWaUrl(`https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent(msg)}`);
+      }
+
+      if (confirmado) {
+        return (
+          <section className="max-w-xl mx-auto px-4 py-12">
+            <div className="bg-gray-900 border border-yellow-700/40 rounded-3xl p-8">
+              <h2 className="font-playfair text-3xl text-gold font-bold mb-4">Agendamento confirmado</h2>
+              <p className="text-gray-300 mb-2">{confirmado.emoji} {confirmado.servico}</p>
+              <p className="text-gray-300 mb-2">Data: {confirmado.data}</p>
+              <p className="text-gray-300 mb-2">Horário: {confirmado.hora}</p>
+              <p className="text-gray-300 mb-2">Cliente: {confirmado.nome}</p>
+              <p className="text-gray-300 mb-6">WhatsApp: {confirmado.phone}</p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-green-700/80 hover:bg-green-600 text-white font-semibold"
+                >
+                  Enviar no WhatsApp
+                </a>
+                <button className="px-4 py-2 rounded-xl bg-white/10" onClick={() => setPage("home")}>Voltar ao início</button>
+                <button
+                  className="px-4 py-2 rounded-xl text-gray-950 font-semibold"
+                  style={{ background: "linear-gradient(135deg,#d4af37,#f59e0b)" }}
+                  onClick={() => {
+                    setConfirmado(null);
+                    setServico(null);
+                    setHora(null);
+                    setForm({ nome: "", phone: "", obs: "" });
+                  }}
+                >
+                  Novo agendamento
+                </button>
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      return (
+        <section className="max-w-4xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <h2 className="font-playfair text-2xl font-bold mb-4">1) Escolha o serviço</h2>
+            <div className="space-y-2">
+              {SERVICES.map((s) => (
+                <label key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-950 border border-gray-800 cursor-pointer">
+                  <div>
+                    <p className="font-medium">{s.emoji} {s.name}</p>
+                    <p className="text-sm text-gray-400">{s.duration}</p>
+                  </div>
+                  <input type="radio" name="servico" checked={Number(servico) === s.id} onChange={() => setServico(s.id)} />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <h2 className="font-playfair text-2xl font-bold mb-4">2) Data e horário</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              {dias.map((d) => (
+                <button
+                  key={d.toISOString()}
+                  onClick={() => { setData(d); setHora(null); }}
+                  className={`p-2 rounded-lg text-sm border ${toKey(d) === toKey(data) ? "border-yellow-500 text-gold bg-yellow-600/10" : "border-gray-700"}`}
+                >
+                  {d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {HORARIOS.map((h) => {
+                const disabled = ocupados.includes(h);
+                return (
+                  <button
+                    key={h}
+                    disabled={disabled}
+                    onClick={() => setHora(h)}
+                    className={`p-2 rounded-lg text-sm border ${disabled ? "opacity-40 border-gray-800 cursor-not-allowed" : hora === h ? "border-yellow-500 text-gold bg-yellow-600/10" : "border-gray-700"}`}
+                  >
+                    {h}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <h2 className="font-playfair text-2xl font-bold mb-4">3) Seus dados</h2>
+            <div className="grid md:grid-cols-2 gap-3">
+              <input className="bg-gray-950 border border-gray-700 rounded-xl p-3" placeholder="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+              <input className="bg-gray-950 border border-gray-700 rounded-xl p-3" placeholder="WhatsApp" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <textarea className="md:col-span-2 bg-gray-950 border border-gray-700 rounded-xl p-3 min-h-[90px]" placeholder="Observações (opcional)" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
+            </div>
+            <button onClick={confirmar} className="mt-5 px-6 py-3 rounded-xl font-bold text-gray-950" style={{ background: "linear-gradient(135deg,#d4af37,#f59e0b)" }}>
+              Confirmar agendamento
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    function Admin({ agendamentos, setAgendamentos }) {
+      function remover(id) {
+        if (!confirm("Deseja remover este agendamento?")) return;
+        setAgendamentos((prev) => prev.filter((a) => a.id !== id));
+      }
+
+      return (
+        <section className="max-w-5xl mx-auto px-4 py-10">
+          <h2 className="font-playfair text-3xl font-bold mb-6">Painel de Agendamentos</h2>
+          {agendamentos.length === 0 ? (
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-gray-400">Nenhum agendamento ainda.</div>
+          ) : (
+            <div className="space-y-3">
+              {agendamentos.map((a) => (
+                <div key={a.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-semibold">{a.emoji} {a.servico} • {a.data} às {a.hora}</p>
+                    <p className="text-sm text-gray-400">{a.nome} • {a.phone}</p>
+                    {a.obs ? <p className="text-sm text-gray-500 mt-1">Obs: {a.obs}</p> : null}
+                  </div>
+                  <button onClick={() => remover(a.id)} className="px-3 py-2 rounded-lg bg-red-900/40 border border-red-700 text-red-300">Remover</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    function App() {
+      const [page, setPage] = useState("home");
+      const [agendamentos, setAgendamentos] = useState(() => {
+        try {
+          const raw = localStorage.getItem("studio_as_agendamentos");
+          return raw ? JSON.parse(raw) : [];
+        } catch {
+          return [];
+        }
+      });
+
+      useEffect(() => {
+        localStorage.setItem("studio_as_agendamentos", JSON.stringify(agendamentos));
+      }, [agendamentos]);
+
+      return (
+        <>
+          <Header page={page} setPage={setPage} />
+          {page === "home" && <Home setPage={setPage} />}
+          {page === "agendar" && <Agendar agendamentos={agendamentos} setAgendamentos={setAgendamentos} setPage={setPage} />}
+          {page === "admin" && <Admin agendamentos={agendamentos} setAgendamentos={setAgendamentos} />}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
